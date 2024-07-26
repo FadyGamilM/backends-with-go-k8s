@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"counterpooler/server/store"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,8 +22,7 @@ var (
 )
 
 type Service struct {
-	store     store.RedisStore
-	lastCount int
+	store store.RedisStore
 }
 
 func main() {
@@ -73,6 +73,13 @@ func httpServer(ctx context.Context, wg *sync.WaitGroup, port, redisAddr string)
 
 	engine.POST("/counter", service.updateCounter)
 
+	err := service.store.Ping()
+	if err != nil {
+		log.Fatalln("failed to connect to redis : ", err)
+	} else {
+		log.Println("connected to redis successfully")
+	}
+
 	go func() {
 		if err := httpSrv.ListenAndServe(); err != nil {
 			log.Fatalln("couldn't start the server : ", err)
@@ -84,7 +91,7 @@ func httpServer(ctx context.Context, wg *sync.WaitGroup, port, redisAddr string)
 	shoutDownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := closeRedisConnection(shoutDownCtx)
+	err = closeRedisConnection(shoutDownCtx)
 	if err != nil {
 		log.Println("error closing redis connection : ", err)
 	}
@@ -96,13 +103,56 @@ func closeRedisConnection(ctx context.Context) error {
 }
 
 func (s *Service) getCounter(ctx *gin.Context) {
+	res := &Counter{}
+
+	val := s.store.Get("counter")
+	err := json.Unmarshal(val, &res.Counter)
+	if err != nil {
+		log.Println("failed to unmarshal response : ", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+	}
+
+	log.Println("=======> ", res.Counter)
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"counter": s.lastCount,
+		"counter": res.Counter,
 	})
 }
 
 func (s *Service) updateCounter(ctx *gin.Context) {
+	req := &Counter{}
+
+	err := ctx.BindJSON(req)
+	if err != nil {
+		log.Println("failed to bind request")
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+	}
+
+	v, err := json.Marshal(req.Counter)
+	if err != nil {
+		log.Println("failed to marshal request")
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+	}
+
+	err = s.store.Put("counter", v)
+	if err != nil {
+		log.Println("failed to marshal request")
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+	}
+
 	ctx.JSON(http.StatusAccepted, gin.H{
-		"counter": s.lastCount,
+		"counter": req.Counter,
 	})
+}
+
+type Counter struct {
+	Counter int `json:"counter"`
 }
