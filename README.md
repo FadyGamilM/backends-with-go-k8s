@@ -9,3 +9,10 @@
 
 - Poller Microservice 
     - reads numbers from server 
+
+# To run the microservices : 
+1- First we need to build the images then run instance of each image 
+> for counter microservice 
+```cmd
+docker build -f ./counter/Dockerfile -t counter-service .
+```

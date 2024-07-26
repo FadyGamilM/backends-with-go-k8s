@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"counterpooler/models"
 	"encoding/json"
 	"log"
@@ -24,31 +23,30 @@ func main() {
 
 	for {
 		// send the post request
-		SetCounter(server)
+		GetCounter(server)
 		// sleep from random time within 5 seconds
 		// d := randomGenerator.Intn(5000)
 		time.Sleep(time.Duration(10000) * time.Millisecond)
 	}
 }
 
-func SetCounter(server string) error {
-	counter := &models.Counter{
-		Counter: randomGenerator.Intn(10000),
+func GetCounter(server string) error {
+	counter := &models.Counter{}
+
+	// we first read the response body, then docde it into our struct
+	res, err := http.Get(server)
+	if err != nil {
+		log.Println("error sending request : ", err)
+		return err
 	}
+	defer res.Body.Close()
 
-	log.Println("setting counter as : ", counter.Counter)
-
-	data, err := json.Marshal(counter)
+	err = json.NewDecoder((res.Body)).Decode(counter)
 	if err != nil {
 		log.Println("error marshling request : ", err)
 		return err
 	}
 
-	_, err = http.Post(server, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		log.Println("error sending request : ", err)
-		return err
-	}
-
+	log.Println("reading counter : ", counter.Counter)
 	return nil
 }
