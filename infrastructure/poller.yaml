@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: poller
+  template:
+    metadata:
+      labels:
+        app: poller
+    spec:
+      containers:
+      - name: poller
+        image: fadygamil/poller:latest
+        env:
+        - name: SERVER_URL
+          value: "http://server:8081/counter"
