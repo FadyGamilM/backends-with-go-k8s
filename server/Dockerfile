@@ -1,30 +1,25 @@
-FROM golang:1.21-alpine
+# Build stage
+FROM golang:1.21-alpine AS builder
 
-# Set the GOPATH
-ENV GOPATH /go
+WORKDIR /app
 
-# Set the working directory to match your module path
-WORKDIR /go/src/ticgo
-
-# Copy go.mod and go.sum
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy only the auth-service source code
-COPY auth-service ./auth-service
+COPY . .
 
-# Set working directory to auth-service inside the container  
-WORKDIR /go/src/ticgo/auth-service
+RUN go build -o server ./server
 
-# Build the application
-RUN go build -o auth main.go
+# Runtime stage
+FROM alpine:latest
 
 RUN apk add --no-cache curl
 
-ENV PORT=3030
+WORKDIR /root/
 
-EXPOSE $PORT
+COPY --from=builder /app/server .
 
-CMD ["./auth"]
+ENV REDIS_URL="192.168.1.6:6379"
+ENV PORT 8081
+
+CMD ["./server"]
