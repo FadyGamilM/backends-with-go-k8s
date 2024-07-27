@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"counterpooler/models"
 	"encoding/json"
 	"log"
 	"math/rand"
@@ -32,7 +31,7 @@ func main() {
 }
 
 func SetCounter(server string) error {
-	counter := &models.Counter{
+	counter := &Counter{
 		Counter: randomGenerator.Intn(10000),
 	}
 
@@ -51,4 +50,8 @@ func SetCounter(server string) error {
 	}
 
 	return nil
+}
+
+type Counter struct {
+	Counter int `json:"counter"`
 }

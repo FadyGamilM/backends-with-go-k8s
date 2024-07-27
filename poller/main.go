@@ -1,7 +1,6 @@
 package main
 
 import (
-	"counterpooler/models"
 	"encoding/json"
 	"log"
 	"math/rand"
@@ -31,7 +30,7 @@ func main() {
 }
 
 func GetCounter(server string) error {
-	counter := &models.Counter{}
+	counter := &Counter{}
 
 	// we first read the response body, then docde it into our struct
 	res, err := http.Get(server)
@@ -49,4 +48,8 @@ func GetCounter(server string) error {
 
 	log.Println("reading counter : ", counter.Counter)
 	return nil
+}
+
+type Counter struct {
+	Counter int `json:"counter"`
 }

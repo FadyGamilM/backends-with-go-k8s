@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"counterpooler/models"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -103,8 +102,12 @@ func closeRedisConnection(ctx context.Context) error {
 	return nil
 }
 
+type Counter struct {
+	Counter int `json:"counter"`
+}
+
 func (s *Service) getCounter(ctx *gin.Context) {
-	res := &models.Counter{}
+	res := &Counter{}
 
 	val := s.store.Get("counter")
 	err := json.Unmarshal(val, &res.Counter)
@@ -123,7 +126,7 @@ func (s *Service) getCounter(ctx *gin.Context) {
 }
 
 func (s *Service) updateCounter(ctx *gin.Context) {
-	req := &models.Counter{}
+	req := &Counter{}
 
 	err := ctx.BindJSON(req)
 	if err != nil {
